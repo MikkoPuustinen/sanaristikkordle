@@ -2,32 +2,33 @@ import './App.css';
 import { useState } from 'react'
 import  cx from 'classnames'
 import Modal from 'react-modal';
+import wordList from './sanalista.json';
 
 const GameFinishedModal = ({rowAnswers, colAnswers}) => {
-    console.log(rowAnswers)
-    const nr = rowAnswers.reduce((acc, curr) => curr.length + Number(acc))
-    console.log(nr)
-    const numGuesses = rowAnswers.reduce((acc, curr) => curr.length + Number(acc)) + colAnswers.reduce((acc, curr) => curr.length + Number(acc));
+
+    const numGuesses = rowAnswers.map(arr => arr.length).reduce((acc, curr) => acc + curr) + 
+                       colAnswers.map(arr => arr.length).reduce((acc, curr) => acc + curr);
+
     return (
         <>
-            <div>
-                <div>Voitit!</div>
-                <div>Ratkaisit sanaristikkordlen {numGuesses} arvauksella.</div>
+            <div className='modal-content'>
+                <div className='win-header'>Voitit!</div>
+                <div className='win-message'>Ratkaisit sanaristikkordlen {numGuesses} arvauksella.</div>
                 <div className='statistics'>
-                    <div>
+                    <div className='stat-element'>
                         <div>Pelattu</div>
                         <div>1</div>
                     </div>
-                    <div>
+                    <div className='stat-element'>
                         <div>Voitto %</div>
                         <div>100%</div>
                     </div>
-                    <div>
+                    <div className='stat-element'>
                         <div>Kesk. arvaukset</div>
                         <div>{numGuesses}</div>
 
                     </div>
-                    <div>
+                    <div className='stat-element'>
                         <div>Streak</div>
                         <div>1</div>
                     </div>
@@ -69,7 +70,7 @@ function KeyBoard({onEnter, onKey, onBackspace, correctWord, currentAnswers, cur
     const createKeyboardRow = (letters) => { 
         return letters.map(letter => {
             const yellow = correctLetters.has(letter) && guessedLetters.has(letter);
-            let green = currentGuess.includes(letter);
+            const green = currentGuess.includes(letter);
 
             const grey = guessedLetters.has(letter) && !yellow && !green;
 
@@ -111,13 +112,13 @@ function KeyBoard({onEnter, onKey, onBackspace, correctWord, currentAnswers, cur
 //    ["R", "I", "I", "T", "A"],
 //];
 
-let solution = [
-   [".", "J", "O", "H", "N"],
-   ["M", "A", "M", "A", "."],
-   ["Å", "K", "E", "R", "Ö"],
-   ["N", "A", "N", "A", "."],
-   ["S", "A", "A", "T", "E"],
-];
+// let solution = [
+//    [".", "J", "O", "H", "N"],
+//    ["M", "A", "M", "A", "."],
+//    ["Å", "K", "E", "R", "Ö"],
+//    ["N", "A", "N", "A", "."],
+//    ["S", "A", "A", "T", "E"],
+// ];
 
 let a = [
     [".", "J", "O", "H", "N"],
@@ -135,13 +136,29 @@ let a = [
 //     ["O", "S", "A", "T", "A"],
 // ];
 
+// let solution = [
+//     ["L", "A", "U", "R", "I"],
+//     ["A", "L", "L", "E", "N"],
+//     ["A", "V", "O", "I", "N"],
+//     ["M", "A", "I", "J", "A"],
+//     ["A", "R", "N", "O", "T"],
+// ];
+
+let solution = [
+    ["M", "A", "S", "T", "O"],
+    ["Y", "R", "T", "I", "T"],
+    ["R", "I", "U", "U", "T"],
+    ["H", "E", "R", "U", "A"],
+    ["A", "L", "E", "T", "A"],
+];
+
 const emptyGuesses = [[], [], [], [], []];
 
 function App() {
     const emptyGrid = solution.map((row) => row.map((el) => el === '.' ? '.' : ""))
     const [completed, setCompleted] = useState(false);
     const [grid, setGrid] = useState(emptyGrid);
-    const [answer, setAnswer] = useState(a);
+    const [answer, setAnswer] = useState(emptyGrid);
     const [rowAnswers, setRowAnswers] = useState(emptyGuesses);
     const [colAnswers, setColAnswers] = useState(emptyGuesses);
 
@@ -385,8 +402,12 @@ function App() {
         if (currentGuesses.length >= guess.length) {
             return;
         }
-        // TODO: check that word exists in vocabulary
-        if (dir === 0) {
+
+        if (!wordList.includes(guess.join(""))) {
+            return;
+        }
+
+        if (dir === 0) {
             for (let i  = 0; i < guess.length; ++i) {
                 if (guess[i] === ' ' && answer[row][i] === '') return;
             }
