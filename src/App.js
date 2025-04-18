@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import Game from './Game';
 import PuzzleList from './PuzzleList'
-import { BrowserRouter, Routes, Route, Link } from "react-router";
+import { BrowserRouter, Routes, Route, Link, useParams } from "react-router";
 import puzzleList from './puzzles.json';
+
+const GameWrapper = () => {
+    let params = useParams();
+
+    return (
+        <Game solution={puzzleList[params.puzzleId]} />
+    );
+}
 
 const App = () => {
     const [puzzle, setPuzzle] = useState(0);
@@ -21,6 +29,7 @@ const App = () => {
                 </div> 
                 <Routes>
                     <Route path="/" element={<Game solution={puzzleList[puzzle]}/>} />
+                    <Route path="/puzzle/:puzzleId" element={<GameWrapper />} />
                     <Route 
                         path="/puzzles" 
                         element={

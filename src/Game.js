@@ -3,42 +3,11 @@ import { useState } from 'react'
 import  cx from 'classnames'
 import Modal from 'react-modal';
 import wordList from './wordlist.json';
+import StatisticsModal from './StatisticsModal';
 
-const GameFinishedModal = ({rowAnswers, colAnswers}) => {
 
-    const numGuesses = rowAnswers.map(arr => arr.length).reduce((acc, curr) => acc + curr) + 
-                       colAnswers.map(arr => arr.length).reduce((acc, curr) => acc + curr);
 
-    return (
-        <>
-            <div className='modal-content'>
-                <div className='win-header'>Voitit!</div>
-                <div className='win-message'>Ratkaisit sanaristikkordlen {numGuesses} arvauksella.</div>
-                <div className='statistics'>
-                    <div className='stat-element'>
-                        <div>Pelattu</div>
-                        <div>1</div>
-                    </div>
-                    <div className='stat-element'>
-                        <div>Voitto %</div>
-                        <div>100%</div>
-                    </div>
-                    <div className='stat-element'>
-                        <div>Kesk. arvaukset</div>
-                        <div>{numGuesses}</div>
-
-                    </div>
-                    <div className='stat-element'>
-                        <div>Streak</div>
-                        <div>1</div>
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-}
-
-function Cell({row, col, i, j, dir, isCorrect, onSelect, letter}) {
+function Cell({row, col, i, j, dir, isCorrect, written, onSelect, letter}) {
     return (
         <>
         {(letter === ".") 
@@ -49,7 +18,8 @@ function Cell({row, col, i, j, dir, isCorrect, onSelect, letter}) {
                     className={cx('cell unselectable', {
                         "selected": (row === i && col === j),
                         "hilighted": ((row === i && dir === 0) || (col === j && dir === 1)),
-                        "correct": isCorrect }
+                        "correct": isCorrect,
+                        "written": written }
                     )}
                     onClick={() => onSelect(i, j)}>
                     {letter}
@@ -264,7 +234,7 @@ function Game({solution}) {
         setDirInternal(direction);
     }
 
-    function selectCell(i, j) {
+    const selectCell = (i, j) => {
         if ((dir === 0 && i !== row) || (dir === 1 && j !== col)) {
             if (dir === 0) {
                 setRowInternal(i);
@@ -290,7 +260,7 @@ function Game({solution}) {
         }
     }
 
-    function moveUp() {
+    const moveUp = () => {
         const newRow = Math.max(row - 1, 0);
         if (grid[newRow][col] !== '.') {
             setRowInternal(newRow);
@@ -298,7 +268,7 @@ function Game({solution}) {
         return newRow;
     }
 
-    function moveDown() {
+    const moveDown = () => {
         const newRow = Math.min(row + 1, grid[0].length - 1);
         if (grid[newRow][col] !== '.') {
             setRowInternal(newRow);
@@ -306,7 +276,7 @@ function Game({solution}) {
         return newRow;
     }
 
-    function moveLeft() {
+    const moveLeft = () => {
         const newCol = Math.max(col - 1, 0);
         if (grid[row][newCol] !== '.') {
             setColInternal(newCol);
@@ -314,7 +284,7 @@ function Game({solution}) {
         return newCol;
     }
 
-    function moveRight() {
+    const moveRight = () => {
         const newCol = Math.min(col + 1, grid.length - 1);
         if (grid[row][newCol] !== '.') {
             setColInternal(newCol);
@@ -322,7 +292,7 @@ function Game({solution}) {
         return newCol;
     }
     
-    function backspace() {
+    const backspace = () => {
         const currEmpty = grid[row][col] === '';
         const nextGrid = grid.map(row => row.slice());
         if (currEmpty) {  
@@ -334,7 +304,7 @@ function Game({solution}) {
         } else {
             nextGrid[row][col] = "";
             setGrid(nextGrid);
-            dir === 0 ? moveLeft() : moveUp();
+            //dir === 0 ? moveLeft() : moveUp();
         }
     }
 
@@ -343,7 +313,8 @@ function Game({solution}) {
         const selectedWorLen = getSelectedWordLen();
         const currentGuesses = getCurrentAnswers();
         let nextAnswers = answer.map(row => row.slice());
-        if (currentGuesses.length >= guess.length) {
+        
+        if (currentGuesses.length >= guess.filter(v => v !== '').length) {
             return;
         }
 
@@ -535,18 +506,20 @@ function Game({solution}) {
                 green = green && numGuesses > i;
                 const yellow = canBeYellow && numGuesses > i && correctLetters.has(letter) && guessedLetters.has(letter) && !green;
                 let letterToUse = ""
+                let isPreguessed = false;
                 if (numGuesses > i) {
                     letterToUse = guesses[i][j];
                 } else if (numGuesses === i) {
                     if (currentGuess[j] === " ") {
-                        letterToUse = currentAnswer[j]
+                        letterToUse = currentAnswer[j];
+                        isPreguessed = true;
                     } else {
                         letterToUse = currentGuess[j];
                     }
                 }
                 
                 letters.push(
-                    <div key={j} className={cx("wordle-letter unselectable", {"guessed": numGuesses > i, "green": green, "yellow": yellow})}>
+                    <div key={j} className={cx("wordle-letter unselectable", {"guessed": numGuesses > i, "green": green, "yellow": yellow, "preguessed": isPreguessed})}>
                         {letterToUse}
                     </div>
                 );
@@ -572,7 +545,8 @@ function Game({solution}) {
                         {el.map((i) => 
                             <div key={`row ${i}`} className="row">
                                 {el.map((j) => {
-                                    const letterToUse = (grid[i][j] !== ' ' && grid[i][j] !== "") ? grid[i][j] : answer[i][j]
+                                    const written = (grid[i][j] !== ' ' && grid[i][j] !== "");
+                                    const letterToUse = written ? grid[i][j] : answer[i][j]
                                     return (
                                         <Cell
                                             key={`cell ${i} ${j}`}
@@ -582,6 +556,7 @@ function Game({solution}) {
                                             j={j} 
                                             dir={dir}
                                             isCorrect={answer[i][j] !== ""}
+                                            written={written}
                                             onSelect={selectCell} 
                                             letter={letterToUse} />
                                     );
@@ -609,7 +584,7 @@ function Game({solution}) {
                 isOpen={completed}
                 onRequestClose={handleModalClose}
                 className={"completion-modal"}>
-                <GameFinishedModal 
+                <StatisticsModal 
                     rowAnswers={rowAnswers}
                     colAnswers={colAnswers}/>
             </Modal>

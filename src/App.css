@@ -105,6 +105,10 @@ html, body {
         background: #777777
     }
 
+    &.preguessed {
+        color: var(--s_green);
+    }
+
     &.green {
         background: var(--s_green);
         border: 3px solid var(--s_green);
@@ -126,6 +130,10 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
+
+    &.written {
+        color: rgb(62, 53, 53);
+    }
     
     &.hilighted {
         background: var(--s_hilight);
@@ -204,6 +212,7 @@ html, body {
 }
 
 .modal-content {
+    background: var(--s_black);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -265,9 +274,13 @@ a {
         padding: 10px 10px;
     }
 
+    .main-container {
+        height: calc(100% - 61px);
+    }
+
     .bottom-container {
         flex-direction: column;
-        height: calc(100vh - 61px);
+        height: 100%; 
         
         .grid-container {
             width: 100%;

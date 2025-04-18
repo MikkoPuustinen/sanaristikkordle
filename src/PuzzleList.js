@@ -9,7 +9,7 @@ const PuzzleList = ({puzzleList, onSelect}) => {
                 return (
                     <button className="puzzle-button" onClick={() => {
                         onSelect(i);
-                        navigate("/");
+                        navigate("/puzzle/" + i);
                     }}>
                         Sanaristikkordle {i + 1}
                     </button>
