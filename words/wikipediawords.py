@@ -2,7 +2,7 @@ from datasets import load_dataset
 import re
 import pickle
 
-regex = re.compile('[^a-zA-ZäöÄÖ]')
+regex = re.compile('[^a-zA-ZåäöÅÄÖ]')
 
 ds = load_dataset("wikimedia/wikipedia", "20231101.fi")
 

@@ -4,31 +4,8 @@ import  cx from 'classnames'
 import Modal from 'react-modal';
 import wordList from './wordlist.json';
 import StatisticsModal from './StatisticsModal';
+import Cell from './Cell';
 
-
-
-function Cell({row, col, i, j, dir, isCorrect, written, onSelect, letter}) {
-    return (
-        <>
-        {(letter === ".") 
-            ? (
-                <div className="block"></div>
-            ) : (
-                <div 
-                    className={cx('cell unselectable', {
-                        "selected": (row === i && col === j),
-                        "hilighted": ((row === i && dir === 0) || (col === j && dir === 1)),
-                        "correct": isCorrect,
-                        "written": written }
-                    )}
-                    onClick={() => onSelect(i, j)}>
-                    {letter}
-                </div>
-            )
-        }
-        </>
-    );
-}
 
 function KeyBoard({onEnter, onKey, onBackspace, correctWord, currentAnswers, currentGuess}) {
     const topRow = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Å"];
@@ -550,14 +527,11 @@ function Game({solution}) {
                                     return (
                                         <Cell
                                             key={`cell ${i} ${j}`}
-                                            row={row} 
-                                            col={col} 
-                                            i={i} 
-                                            j={j} 
-                                            dir={dir}
+                                            selected={(row === i && col === j)}
+                                            hilighted={((row === i && dir === 0) || (col === j && dir === 1))}
                                             isCorrect={answer[i][j] !== ""}
                                             written={written}
-                                            onSelect={selectCell} 
+                                            onSelect={() => selectCell(i, j)} 
                                             letter={letterToUse} />
                                     );
                                 })}

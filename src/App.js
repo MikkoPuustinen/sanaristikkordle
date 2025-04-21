@@ -8,7 +8,7 @@ const GameWrapper = () => {
     let params = useParams();
 
     return (
-        <Game solution={puzzleList[params.puzzleId]} />
+        <Game solution={puzzleList[params.puzzleId - 1]} />
     );
 }
 
@@ -17,7 +17,7 @@ const App = () => {
     const [showStats, setShowStats] = useState(false);
 
     const selectPuzzle = (idx) => {
-        setPuzzle(idx);
+        setPuzzle(idx - 1);
     }
 
     return (

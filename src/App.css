@@ -24,12 +24,32 @@ html, body {
 
 .puzzles-container {
     background: var(--s_black);
-    height: calc(100vh - 100px);
+    height: calc(100vh - 140px);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow-y: scroll;
+    padding: 20px 50px;
+    justify-content: center;
+    align-items: center;
 
     .puzzle-button {
         color: white;
+        margin: 0 10px;
+    }
+    
+    .cell {
+        width: 50px;
+        height: 50px;
+    }
+
+    .block {
+        width: 50px;
+        height: 50px;
+    }
+
+    .puzzle-name {
+        margin: 5px 0;
     }
 }
 
