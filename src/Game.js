@@ -1,11 +1,42 @@
 import './App.css';
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import  cx from 'classnames'
 import Modal from 'react-modal';
 import wordList from './wordlist.json';
 import StatisticsModal from './StatisticsModal';
 import Cell from './Cell';
 
+import * as db from './db';
+
+function Cell({row, col, i, j, dir, isCorrect, written, onSelect, letter}) {
+    return (
+        <>
+        {(letter === ".") 
+            ? (
+                <div className="block"></div>
+            ) : (
+                <div 
+                    className={cx('cell unselectable', {
+                        "selected": (row === i && col === j),
+                        "hilighted": ((row === i && dir === 0) || (col === j && dir === 1)),
+                        "correct": isCorrect,
+                        "written": written }
+                    )}
+                    onClick={() => onSelect(i, j)}>
+                    {letter}
+                </div>
+            )
+        }
+        </>
+    );
+}
+
+function formatMilliseconds(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+}
 
 function KeyBoard({onEnter, onKey, onBackspace, correctWord, currentAnswers, currentGuess}) {
     const topRow = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Å"];
@@ -43,7 +74,19 @@ function KeyBoard({onEnter, onKey, onBackspace, correctWord, currentAnswers, cur
     )
 }
 
-function Game({solution}) {
+function Game({ solution, id }) {
+    const checkCompletion = (puzzleAnswer) => {
+        let unfinished = false;
+        for (let i = 0; i < puzzleAnswer.length; ++i) {
+            for (let j = 0; j < puzzleAnswer[i].length; ++j) {
+                if (puzzleAnswer[i][j] == "") {
+                    unfinished = true;
+                    break;
+                }
+            }
+        }
+        return unfinished;
+    }
     const emptyGuesses = [[], [], [], [], []];
 
     const emptyGrid = solution.map((row) => row.map((el) => el === '.' ? '.' : ""))
@@ -52,6 +95,18 @@ function Game({solution}) {
     const [answer, setAnswer] = useState(emptyGrid);
     const [rowAnswers, setRowAnswers] = useState(emptyGuesses);
     const [colAnswers, setColAnswers] = useState(emptyGuesses);
+    const [prevTime, setPrevTime] = useState(Date.now());
+    const prevTimeRef = useRef(prevTime);
+    const [timer, setTimer] = useState(0);
+    const timerRef = useRef(timer);
+
+    useEffect(() => {
+        timerRef.current = timer;
+      }, [timer]);
+
+    useEffect(() => {
+        prevTimeRef.current = prevTime;
+    }, [prevTime]);
 
     let initialCol = 0;
     while (grid[0][initialCol] === '.') {
@@ -61,6 +116,37 @@ function Game({solution}) {
     const [row, setRow] = useState(0);
     const [col, setCol] = useState(initialCol);
     const [dir, setDir] = useState(0); // 0 | 1
+
+    const timerInterval = useRef(null);
+
+    useEffect(() => {
+        db.getPuzzle(id).then(res => {
+            if (res.answer) {
+                setAnswer(res.answer);
+                setRowAnswers(res.rowAnswers);
+                setColAnswers(res.colAnswers);
+                setTimer(res.time);
+            }
+
+            if (!res.answer || checkCompletion(res.answer)) {
+                console.log("setting iternernern")
+                clearInterval(timerInterval.current);
+                timerInterval.current = setInterval(() => {
+                    db.getPuzzle(id).then(puzzle => {
+                        const now = Date.now();
+                        const newTime = timerRef.current + (now - prevTimeRef.current);
+                        setTimer(newTime);
+                        setPrevTime(now);
+                        db.savePuzzle(id, { ...puzzle, time: newTime });
+                    })
+                }, 1000);
+            }
+        })
+    
+        return () => {
+            clearInterval(timerInterval.current);
+        };
+      }, []);
 
     const el = [0, 1, 2, 3, 4];
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'Å', 'Ä', 'Ö'];
@@ -290,6 +376,8 @@ function Game({solution}) {
         const selectedWorLen = getSelectedWordLen();
         const currentGuesses = getCurrentAnswers();
         let nextAnswers = answer.map(row => row.slice());
+        let nextRowAnswers = rowAnswers.map(a => a.slice());
+        let nextColAnswers = colAnswers.map(a => a.slice());
         
         if (currentGuesses.length >= guess.filter(v => v !== '').length) {
             return;
@@ -303,7 +391,6 @@ function Game({solution}) {
             for (let i  = 0; i < guess.length; ++i) {
                 if (guess[i] === ' ' && answer[row][i] === '') return;
             }
-            let nextRowAnswers = rowAnswers.map(a => a.slice());
             if (nextRowAnswers[row].length < selectedWorLen) {
                 for (let i = 0; i < guess.length; ++i) {
                     if (guess[i] === ' ') guess[i] = answer[row][i];
@@ -335,7 +422,6 @@ function Game({solution}) {
             for (let i  = 0; i < guess.length; ++i) {
                 if (guess[i] === ' ' && answer[i][col] === '') return;
             }
-            let nextColAnswers = colAnswers.map(a => a.slice());
             if (nextColAnswers[col].length < selectedWorLen) {
                 for (let i = 0; i < guess.length; ++i) {
                     if (guess[i] === ' ') guess[i] = answer[i][col];
@@ -365,16 +451,23 @@ function Game({solution}) {
             setRow(initialRow)
         }
 
-        let unfinished = false;
-        for (let i = 0; i < nextAnswers.length; ++i) {
-            for (let j = 0; j < nextAnswers[i].length; ++j) {
-                if (nextAnswers[i][j] == "") {
-                    unfinished = true;
-                    break;
-                }
-            }
-        }
+        const unfinished = checkCompletion(nextAnswers);
+
         setCompleted(!unfinished);
+
+        if (!unfinished) {
+            console.log("claring");
+            clearInterval(timerInterval.current);
+        }
+
+        const entry = {
+            answer: nextAnswers,
+            rowAnswers: nextRowAnswers,
+            colAnswers: nextColAnswers,
+            time: timer
+        };
+
+        db.savePuzzle(id, entry);
     }
 
     const enterKey = (key) => {
@@ -516,6 +609,7 @@ function Game({solution}) {
     
     return (
         <div className="main-container" tabIndex={0} onKeyDown={keyDown}>
+            <div className='timer'>{formatMilliseconds(timer)}</div>
             <div className="bottom-container">
                 <div className="grid-container">
                     <div className="grid">
