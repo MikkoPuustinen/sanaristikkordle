@@ -5,73 +5,14 @@ import Modal from 'react-modal';
 import wordList from './wordlist.json';
 import StatisticsModal from './StatisticsModal';
 import Cell from './Cell';
-
+import KeyBoard from './Keyboard';
 import * as db from './db';
-
-function Cell({row, col, i, j, dir, isCorrect, written, onSelect, letter}) {
-    return (
-        <>
-        {(letter === ".") 
-            ? (
-                <div className="block"></div>
-            ) : (
-                <div 
-                    className={cx('cell unselectable', {
-                        "selected": (row === i && col === j),
-                        "hilighted": ((row === i && dir === 0) || (col === j && dir === 1)),
-                        "correct": isCorrect,
-                        "written": written }
-                    )}
-                    onClick={() => onSelect(i, j)}>
-                    {letter}
-                </div>
-            )
-        }
-        </>
-    );
-}
 
 function formatMilliseconds(ms) {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
     const seconds = String(totalSeconds % 60).padStart(2, '0');
     return `${minutes}:${seconds}`;
-}
-
-function KeyBoard({onEnter, onKey, onBackspace, correctWord, currentAnswers, currentGuess}) {
-    const topRow = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Å"];
-    const middleRow = ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä"];
-    const bottomRow = ["Z", "X", "C", "V", "B", "N", "M"];
-    const correctLetters = new Set(correctWord);
-    const guessedLetters = new Set(currentAnswers.flat());
-
-    const createKeyboardRow = (letters) => { 
-        return letters.map(letter => {
-            const yellow = correctLetters.has(letter) && guessedLetters.has(letter);
-            const green = currentGuess.includes(letter);
-
-            const grey = guessedLetters.has(letter) && !yellow && !green;
-
-            return (
-                <div key={letter} className={cx("key unselectable", {"yellow": yellow && !green, "green": green, "grey": grey})} onClick={() => onKey(letter)}>{letter}</div>
-            )
-        })
-    }
-    return (
-        <>
-            <div className="keyboard-row">
-                {createKeyboardRow(topRow)}
-            </div>
-            <div className="keyboard-row">
-                {createKeyboardRow(middleRow)}
-            </div>
-            <div className="keyboard-row">
-                <div className="key unselectable backspace" onClick={() => onBackspace()}></div>
-                {createKeyboardRow(bottomRow)}
-                <div className="key unselectable enter" onClick={() => onEnter()}></div>
-            </div>
-        </>
-    )
 }
 
 function Game({ solution, id }) {
@@ -129,7 +70,6 @@ function Game({ solution, id }) {
             }
 
             if (!res.answer || checkCompletion(res.answer)) {
-                console.log("setting iternernern")
                 clearInterval(timerInterval.current);
                 timerInterval.current = setInterval(() => {
                     db.getPuzzle(id).then(puzzle => {
