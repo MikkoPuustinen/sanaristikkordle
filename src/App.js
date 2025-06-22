@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Game from './Game';
 import PuzzleList from './PuzzleList'
 import { BrowserRouter, Routes, Route, Link, useParams } from "react-router";
@@ -8,7 +8,7 @@ const GameWrapper = () => {
     let params = useParams();
 
     return (
-        <Game solution={puzzleList[params.puzzleId]} />
+        <Game solution={puzzleList[params.puzzleId]} id={String(params.puzzleId)} />
     );
 }
 
@@ -28,7 +28,7 @@ const App = () => {
                     <button className='nav-link' onClick={() => {}}>Tilastot</button>
                 </div> 
                 <Routes>
-                    <Route path="/" element={<Game solution={puzzleList[puzzle]}/>} />
+                    <Route path="/" element={<Game solution={puzzleList[puzzle]} id={String(puzzle)} />} />
                     <Route path="/puzzle/:puzzleId" element={<GameWrapper />} />
                     <Route 
                         path="/puzzles" 
