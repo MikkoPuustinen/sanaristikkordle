@@ -48,8 +48,13 @@ function Game({ solution, id }) {
     useEffect(() => {
         prevTimeRef.current = prevTime;
     }, [prevTime]);
+    
+    const [wordStartRow, setWordStartRow] = useState(0);
+    const [wordStartCol, setWordStartCol] = useState(0);
+    const [wordEndRow, setWordEndRow] = useState(4);
+    const [wordEndCol, setWordEndCol] = useState(4);
 
-    let initialCol = 0;
+    let initialCol = 0; // TODO: wont work in case of 'l', '.', 'l', 'l', 'l'
     while (grid[0][initialCol] === '.') {
         initialCol = initialCol + 1;
     }
@@ -103,13 +108,15 @@ function Game({ solution, id }) {
     const getCurrentGuess = (r, c) => {
         let currentGuess = [];
         if (dir === 0) {
-            currentGuess = grid[r].map(l => {
+            currentGuess = grid[r].map((l, idx) => {
+                if (idx < wordStartCol) return "";
                 if (l === '.') return "";
                 if (l === '') return " ";
                 return l;
             });
         } else {
-            currentGuess = grid.map(row => {
+            currentGuess = grid.map((row, idx) => {
+                if (idx < wordStartRow) return "";
                 if (row[c] === '.') return "";
                 if (row[c] === '') return " ";
                 return row[c];
@@ -121,13 +128,13 @@ function Game({ solution, id }) {
     const getSelectedWordLen = () => {
         let len = 0;
         if (dir === 0) {
-            for (let i = 0; i < grid[row].length; ++i) {
+            for (let i = wordStartCol; i < wordEndCol + 1; ++i) {
                 if (grid[row][i] !== '.') {
                     len = len + 1;
                 }
             }
         } else {
-            for (let i = 0; i < grid.length; ++i) {
+            for (let i = wordStartRow; i < wordEndRow + 1; ++i) {
                 if (grid[i][col] !== '.') {
                     len = len + 1;
                 }
@@ -218,20 +225,64 @@ function Game({ solution, id }) {
         return false;
     }
 
+    const getStartOfWord = (direction, r, c) => {
+        let start = 4;
+        if (direction === 0) {
+            for (let i = c; i >= 0; --i) {
+                start = i;
+                if (i !== 0 && answer[r][i - 1] === '.') {
+                    break;
+                }
+            }
+        } else {
+            for (let i = r; i >= 0; --i) {
+                start = i;
+                if (i !== 0 && answer[i - 1][c] === '.') {
+                    break;
+                }
+            }
+        }
+        return start;
+    }
+
+    const getEndOfWord = (direction, r, c) => {
+        let end = 0;
+        if (direction === 0) {
+            for (let i = c; i < 5; ++i) {
+                end = i;
+                if (i !== 4 && answer[r][i + 1] === '.') {
+                    break;
+                }
+            }
+        } else {
+            for (let i = r; i < 5; ++i) {
+                end = i;
+                if (i !== 4 && answer[i + 1][c] === '.') {
+                    break;
+                }
+            }
+        }
+        return end;
+    }
+
     const switchDirection = (direction, i, j) => {
         if ((direction + 1) % 2 === 0) {
             setColInternal(j);
-            let newRow = 0;
-            while (answer[newRow][j] === '.') {
-                newRow = newRow + 1;
-            }
+            let newRow = getStartOfWord(direction, i, j);
+            const end = getEndOfWord(direction, i, j);
+            setWordEndCol(j);
+            setWordEndRow(end);
+            setWordStartRow(newRow);
+            setWordStartCol(j);
             setRowInternal(newRow);
         } else {
             setRowInternal(i);
-            let newCol = 0;
-            while (answer[i][newCol] === '.') {
-                newCol = newCol + 1;
-            }
+            let newCol = getStartOfWord(direction, i, j);
+            const end = getEndOfWord(direction, i, j);
+            setWordEndCol(end);
+            setWordEndRow(i);
+            setWordStartRow(i);
+            setWordStartCol(newCol);
             setColInternal(newCol);
         }
         setDirInternal(direction);
@@ -241,17 +292,21 @@ function Game({ solution, id }) {
         if ((dir === 0 && i !== row) || (dir === 1 && j !== col)) {
             if (dir === 0) {
                 setRowInternal(i);
-                let newCol = 0;
-                while (answer[i][newCol] === '.') {
-                    newCol = newCol + 1;
-                }
+                let newCol = getStartOfWord(dir, i, j);
+                const end = getEndOfWord(dir, i, j);
+                setWordEndCol(end);
+                setWordEndRow(i);
+                setWordStartRow(i);
+                setWordStartCol(newCol);
                 setColInternal(newCol);
             } else {
                 setColInternal(j);
-                let newRow = 0;
-                while (answer[newRow][j] === '.') {
-                    newRow = newRow + 1;
-                }
+                let newRow = getStartOfWord(dir, i, j);
+                const end = getEndOfWord(dir, i, j);
+                setWordEndCol(j);
+                setWordEndRow(end);
+                setWordStartRow(newRow);
+                setWordStartCol(j);
                 setRowInternal(newRow);
             }
             if (isDirBlocked(dir, i, j)) {
@@ -319,10 +374,12 @@ function Game({ solution, id }) {
         let nextRowAnswers = rowAnswers.map(a => a.slice());
         let nextColAnswers = colAnswers.map(a => a.slice());
         
+        // return if too many guesses already
         if (currentGuesses.length >= guess.filter(v => v !== '').length) {
             return;
         }
-
+        
+        // return if guessed word does not exist
         if (!wordList.includes(guess.join(""))) {
             return;
         }
@@ -352,10 +409,7 @@ function Game({ solution, id }) {
                 }
             }
             setGrid(nextGrid);
-            let initialCol = 0;
-            while (grid[row][initialCol] === '.') {
-                initialCol = initialCol + 1;
-            }
+            let initialCol = getStartOfWord(dir, row, col);
             setCol(initialCol)
             
         } else {
@@ -384,10 +438,7 @@ function Game({ solution, id }) {
             }
             setGrid(nextGrid);
             
-            let initialRow = 0;
-            while (grid[initialRow][col] === '.') {
-                initialRow = initialRow + 1;
-            }
+            let initialRow = getStartOfWord(dir, row, col);
             setRow(initialRow)
         }
 
@@ -442,7 +493,9 @@ function Game({ solution, id }) {
                 backspace();
                 break;
             case 32: // space 
-                setDirInternal((dir + 1) % 2);
+                if (!isDirBlocked(getNextDir(), row, col)) {
+                    switchDirection((dir + 1) % 2, row, col);
+                }
                 break;
             case 13: // enter
                 enterGuess();
@@ -480,13 +533,14 @@ function Game({ solution, id }) {
         let word = []
         if (dir === 0) {
             for (let i = 0; i < answer.length; ++i) {
-                if (answer[row][i] !== '.') {
+                const letter = answer[row][i];
+                if (letter !== '.' && i >= wordStartCol && i <= wordEndCol) {
                     word.push(answer[row][i]);
                 }
             }
         } else {
             for (let i = 0; i < solution.length; ++i) {
-                if (answer[i][col] !== '.') {
+                if (answer[i][col] !== '.' && i >= wordStartRow && i <= wordEndRow) {
                     word.push(answer[i][col]);
                 }
             }
@@ -502,6 +556,7 @@ function Game({ solution, id }) {
         const guesses = getCurrentAnswers().map(g => g.filter(l => l !== ""));
         const numGuesses = guesses.length;
         const currentGuess = getCurrentGuess(row, col).join("");
+        console.log(currentAnswer);
         const rows = [];
         for (let i = 0; i < n; i++) {
             const letters = [];
@@ -558,11 +613,19 @@ function Game({ solution, id }) {
                                 {el.map((j) => {
                                     const written = (grid[i][j] !== ' ' && grid[i][j] !== "");
                                     const letterToUse = written ? grid[i][j] : answer[i][j]
+                                    let hilighted = ((row === i && dir === 0) || (col === j && dir === 1));
+                                    if (dir === 0) {
+                                        hilighted &= j >= wordStartCol;
+                                        hilighted &= j <= wordEndCol;
+                                    } else {
+                                        hilighted &= i >= wordStartRow;
+                                        hilighted &= i <= wordEndRow;
+                                    }
                                     return (
                                         <Cell
                                             key={`cell ${i} ${j}`}
                                             selected={(row === i && col === j)}
-                                            hilighted={((row === i && dir === 0) || (col === j && dir === 1))}
+                                            hilighted={hilighted}
                                             isCorrect={answer[i][j] !== ""}
                                             written={written}
                                             onSelect={() => selectCell(i, j)} 

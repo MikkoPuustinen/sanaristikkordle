@@ -8,7 +8,7 @@ const GameWrapper = () => {
     let params = useParams();
 
     return (
-        <Game solution={puzzleList[params.puzzleId]} id={String(params.puzzleId)} />
+        <Game solution={puzzleList[params.puzzleId - 1]} id={String(params.puzzleId - 1)} />
     );
 }
 

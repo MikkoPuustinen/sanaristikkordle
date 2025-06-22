@@ -2,7 +2,6 @@ import pandas as pd
 import json
 import pickle
 
-
 data = pd.read_csv("./words/newlist.csv", encoding="utf-8")
 
 with open('./words/wikipedia.pkl', 'rb') as f:
@@ -19,14 +18,16 @@ for word in words:
 
 for word in wiki:
     validWords.append(word)
+    
+validWords = list(set(validWords))
 
 print(len(validWords))
 
 json_data = json.dumps(validWords)
 
-with open("./sanalista.json", "w") as f:
+with open("./wordlist.json", "w") as f:
     f.write(json_data)
 
-with open("./sanalist.txt", "w") as f:
+with open("./sanalist.txt", "hmw") as f:
     for word in validWords:
         f.write(word.upper() + " \n")
