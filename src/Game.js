@@ -71,6 +71,9 @@ function Game({ solution, id }) {
                 setAnswer(res.answer);
                 setRowAnswers(res.rowAnswers);
                 setColAnswers(res.colAnswers);
+            }
+
+            if (res.time) {
                 setTimer(res.time);
             }
 
@@ -447,7 +450,6 @@ function Game({ solution, id }) {
         setCompleted(!unfinished);
 
         if (!unfinished) {
-            console.log("claring");
             clearInterval(timerInterval.current);
         }
 
@@ -556,7 +558,6 @@ function Game({ solution, id }) {
         const guesses = getCurrentAnswers().map(g => g.filter(l => l !== ""));
         const numGuesses = guesses.length;
         const currentGuess = getCurrentGuess(row, col).join("");
-        console.log(currentAnswer);
         const rows = [];
         for (let i = 0; i < n; i++) {
             const letters = [];
